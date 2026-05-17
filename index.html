@@ -5,11 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Obsidian Bridge</title>
 <script>
-  // Redirect mode — fires before page renders if hash is present
   (function() {
     const h = window.location.hash.slice(1);
     if (h.startsWith('obsidian://')) {
+      // Fire the obsidian:// handler
       window.location.replace(h);
+
+      // After redirect dispatches, try to close the tab.
+      // Works on script-opened tabs and many Android Custom Tabs.
+      // Desktop browsers will silently ignore it — that's a browser
+      // security rule, not something we can override.
+      setTimeout(() => {
+        window.close();
+        // If we're still here, render a clean "done" state
+        // instead of leaving the bridge UI visible.
+        document.documentElement.innerHTML =
+          '<body style="margin:0;background:#1a1a1a;color:#888;' +
+          'font-family:system-ui;display:flex;align-items:center;' +
+          'justify-content:center;height:100vh;font-size:.9rem;' +
+          'text-align:center;padding:1rem">' +
+          '✓ Opened in Obsidian<br>' +
+          '<span style="font-size:.8rem;opacity:.6;margin-top:.5rem;display:block">' +
+          'You can close this tab</span></body>';
+      }, 300);
     }
   })();
 </script>
