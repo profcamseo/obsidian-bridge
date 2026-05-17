@@ -1,16 +1,147 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Opening Obsidian…</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Obsidian Bridge</title>
 <script>
-  const target = window.location.hash.slice(1);
-  if (target) {
-    window.location.replace(target);
-  } else {
-    document.body.innerHTML = 'Append #obsidian://... to this URL';
-  }
+  // Redirect mode — fires before page renders if hash is present
+  (function() {
+    const h = window.location.hash.slice(1);
+    if (h.startsWith('obsidian://')) {
+      window.location.replace(h);
+    }
+  })();
 </script>
+<style>
+  :root {
+    --bg: #1a1a1a; --fg: #e8e8e8; --muted: #888;
+    --accent: #7c3aed; --accent-hover: #6d28d9;
+    --surface: #262626; --border: #333; --success: #10b981;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg); color: var(--fg); min-height: 100vh;
+    display: flex; justify-content: center; padding: 2rem 1rem;
+  }
+  .container { max-width: 600px; width: 100%; }
+  h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
+  p.sub { color: var(--muted); margin: 0 0 2rem; font-size: .95rem; }
+  label {
+    display: block; margin-bottom: .5rem; font-size: .8rem;
+    color: var(--muted); text-transform: uppercase; letter-spacing: .05em;
+  }
+  textarea {
+    width: 100%; padding: .75rem; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; color: var(--fg);
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: .85rem; resize: vertical; min-height: 80px;
+  }
+  textarea:focus { outline: none; border-color: var(--accent); }
+  .section { margin-bottom: 1.5rem; }
+  .output {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: .75rem;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: .85rem; word-break: break-all; color: var(--muted);
+    min-height: 3rem;
+  }
+  .output.has-value { color: var(--fg); }
+  .buttons { display: flex; gap: .5rem; margin-top: .75rem; }
+  button {
+    padding: .65rem 1.25rem; border: none; border-radius: 6px;
+    font-size: .9rem; font-weight: 500; cursor: pointer; font-family: inherit;
+  }
+  button.primary { background: var(--accent); color: white; }
+  button.primary:hover:not(:disabled) { background: var(--accent-hover); }
+  button.secondary {
+    background: transparent; color: var(--fg); border: 1px solid var(--border);
+  }
+  button.secondary:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  .toast {
+    color: var(--success); font-size: .85rem; margin-top: .5rem; height: 1rem;
+  }
+  footer {
+    margin-top: 2rem; color: var(--muted); font-size: .8rem; line-height: 1.5;
+  }
+</style>
 </head>
-<body>Opening Obsidian…</body>
+<body>
+<div class="container">
+  <h1>Obsidian Bridge</h1>
+  <p class="sub">Paste an Obsidian URI → get a Gospel-Library-safe link.</p>
+
+  <div class="section">
+    <label for="input">Obsidian URI</label>
+    <textarea id="input" placeholder="obsidian://adv-uri?vault=MAIN&uid=..." autofocus></textarea>
+  </div>
+
+  <div class="section">
+    <label>Bridge URL</label>
+    <div id="output" class="output">Paste a URI above…</div>
+    <div class="buttons">
+      <button id="copy" class="primary" disabled>Copy bridge URL</button>
+      <button id="test" class="secondary" disabled>Test in Obsidian</button>
+    </div>
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <footer>
+    Paste the bridge URL into a Gospel Library note's hyperlink tool.
+    Tapping it redirects through this page and opens the note in Obsidian.
+  </footer>
+</div>
+
+<script>
+  const base = window.location.origin + window.location.pathname.replace(/index\.html$/, '');
+  const input = document.getElementById('input');
+  const output = document.getElementById('output');
+  const copyBtn = document.getElementById('copy');
+  const testBtn = document.getElementById('test');
+  const toast = document.getElementById('toast');
+
+  function update() {
+    const v = input.value.trim();
+    if (v.startsWith('obsidian://')) {
+      output.textContent = base + '#' + v;
+      output.classList.add('has-value');
+      copyBtn.disabled = false;
+      testBtn.disabled = false;
+    } else if (v === '') {
+      output.textContent = 'Paste an obsidian:// URI above…';
+      output.classList.remove('has-value');
+      copyBtn.disabled = true;
+      testBtn.disabled = true;
+    } else {
+      output.textContent = 'URI must start with obsidian://';
+      output.classList.remove('has-value');
+      copyBtn.disabled = true;
+      testBtn.disabled = true;
+    }
+  }
+
+  function flashToast(msg, ok = true) {
+    toast.textContent = (ok ? '✓ ' : '✗ ') + msg;
+    toast.style.color = ok ? 'var(--success)' : '#ef4444';
+    setTimeout(() => toast.textContent = '', 2500);
+  }
+
+  input.addEventListener('input', update);
+
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(output.textContent);
+      flashToast('Copied to clipboard');
+    } catch {
+      flashToast('Copy failed — select manually', false);
+    }
+  });
+
+  testBtn.addEventListener('click', () => {
+    window.location.href = output.textContent;
+  });
+</script>
+</body>
 </html>
