@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Opening Obsidian…</title>
+<script>
+  const target = window.location.hash.slice(1);
+  if (target) {
+    window.location.replace(target);
+  } else {
+    document.body.innerHTML = 'Append #obsidian://... to this URL';
+  }
+</script>
+</head>
+<body>Opening Obsidian…</body>
+</html>
